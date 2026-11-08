@@ -33,13 +33,13 @@ Harus menjawab `129.226.95.14`.
 ```bash
 sudo mkdir -p /opt/gezykomen
 sudo chown ubuntu:ubuntu /opt/gezykomen
-git clone https://github.com/gezyt/waline.git /opt/gezykomen
+git clone https://github.com/gezyt/gezykomen.git /opt/gezykomen
 cd /opt/gezykomen
 ```
 
-Catatan: repo ini namanya `gezyt/waline` (nama lama dari rencana Waline),
-isinya sekarang GezyKomen. Jangan tertukar dengan kode Waline resmi
-(`walinejs/waline`) — repo ini tidak berisi kode Waline sama sekali.
+Repo ini `gezyt/gezykomen` (sebelumnya `gezyt/waline`, di-rename 9 Nov 2026).
+Jangan tertukar dengan kode Waline resmi (`walinejs/waline`) — repo ini
+tidak berisi kode Waline sama sekali.
 
 Pastikan Bun sudah terpasang di VPS (cek `which bun` — samakan path-nya
 dengan `ExecStart` di `gezykomen.service`, biasanya `/usr/local/bin/bun`).
