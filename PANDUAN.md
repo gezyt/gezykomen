@@ -37,13 +37,14 @@ blog di atas.
 
 ## Deploy
 
-Ikuti `DEPLOY.md` langkah demi langkah (DNS → clone ke `/opt/gezykomen`
-→ buat akun admin → systemd → Caddy → curl uji → pasang widget di blog).
+Ikuti `DEPLOY.md` langkah demi langkah (DNS → clone ke `/opt/waline`
+→ buat akun admin → systemd → Nginx → curl uji → pasang widget di blog).
 
 ## Integrasi blog
 
-Matikan Waline dan Utterances di `config/_default/params.toml`, lalu
-pasang widget di template artikel:
+Di repo blog, buat override `layouts/_partials/comment.html` yang
+menggantikan partial komentar tema DoIt dengan widget GezyKomen
+(sehingga Waline/Utterances tidak tampil lagi, tanpa mengubah tema):
 
 ```html
 <div id="gezykomen" data-path="{{ .RelPermalink }}"></div>
@@ -56,7 +57,7 @@ pasang widget di template artikel:
 | Gejala | Periksa dulu |
 |---|---|
 | `curl http://127.0.0.1:3102/health` gagal | Apakah service jalan (`sudo systemctl status gezykomen`)? Apakah port 3102 dipakai aplikasi lain? |
-| Subdomain tidak bisa dibuka | Apakah DNS sudah menjawab `129.226.95.14`? Apakah Caddy sudah di-reload? |
+| Subdomain tidak bisa dibuka | Apakah DNS sudah menjawab `129.226.95.14`? Apakah Nginx sudah di-reload (`sudo nginx -t && sudo systemctl reload nginx`)? |
 | Kotak komentar tidak tampil di blog | Apakah `data-path` terisi path artikel? Apakah Waline/Utterances masih aktif? |
 | Kirim komentar ditolak 429 | Itu rate limit: tunggu 10 detik, atau maks 5 komentar per 10 menit per IP. |
 | Tidak bisa masuk `/admin` | Akun dibuat lewat `bun scripts/create-user.ts` di server? Kata sandi benar? |

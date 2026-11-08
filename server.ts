@@ -148,7 +148,7 @@ export function createHandler(opts: HandlerOptions) {
     // ini dengan IP asli pengunjung, jadi nilainya tidak bisa dipalsukan
     // selama lalu lintas lewat Cloudflare (domain ini memang di-proxy
     // Cloudflare). Tanpa header itu (akses langsung ke server, tanpa
-    // Cloudflare), pakai IP koneksi TCP — di VPS itu IP Caddy
+    // Cloudflare), pakai IP koneksi TCP — di VPS itu IP proxy Nginx
     // (127.0.0.1), jadi semua lalu lintas langsung berbagi satu kuota:
     // sengaja ketat (fail-closed), bukan longgar.
     const cf = req.headers.get("cf-connecting-ip");

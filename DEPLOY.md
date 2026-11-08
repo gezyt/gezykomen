@@ -7,7 +7,9 @@ tanpa MariaDB.
 - Layanan: https://komentar.pakgun.web.id
 - VPS: `129.226.95.14`
 - Port: `3102`
-- Database: `/opt/gezykomen/data/gezykomen.db` (SQLite satu berkas)
+- Database: `/opt/waline/data/gezykomen.db` (SQLite satu berkas)
+- Proxy depan: **Nginx** (bukan Caddy). Salt tinggal di
+  `/etc/gezykomen.env`, dibaca service lewat `EnvironmentFile`.
 
 ---
 
@@ -31,11 +33,16 @@ Harus menjawab `129.226.95.14`.
 ## 2. Clone ke VPS
 
 ```bash
-sudo mkdir -p /opt/gezykomen
-sudo chown ubuntu:ubuntu /opt/gezykomen
-git clone https://github.com/gezyt/gezykomen.git /opt/gezykomen
-cd /opt/gezykomen
+sudo mkdir -p /opt/waline
+sudo chown ubuntu:ubuntu /opt/waline
+git clone https://github.com/gezyt/gezykomen.git /opt/waline
+cd /opt/waline
 ```
+
+Catatan: folder di VPS namanya `/opt/waline` (dari nama repo lama
+sebelum di-rename jadi `gezykomen`) — biarkan begitu, jangan
+pindah-pindah, karena service systemd dan database sudah mengacu ke
+sana.
 
 Repo ini `gezyt/gezykomen` (sebelumnya `gezyt/waline`, di-rename 9 Nov 2026).
 Jangan tertukar dengan kode Waline resmi (`walinejs/waline`) — repo ini
@@ -49,7 +56,7 @@ dengan `ExecStart` di `gezykomen.service`, biasanya `/usr/local/bin/bun`).
 ## 3. Buat akun admin
 
 ```bash
-cd /opt/gezykomen
+cd /opt/waline
 bun scripts/create-user.ts pakgun <kata-sandi-admin>
 ```
 
@@ -61,34 +68,44 @@ perintah ini di server.
 
 ## 4. systemd
 
+Buat dulu berkas env (sekali saja; kalau sudah ada dari install
+sebelumnya, JANGAN timpa — salt yang sudah jalan harus tetap sama):
+
+```bash
+echo "GEZYKOMEN_SALT=$(openssl rand -hex 16)" | sudo tee /etc/gezykomen.env
+sudo chmod 600 /etc/gezykomen.env
+```
+
+Lalu pasang service:
+
 ```bash
 sudo cp gezykomen.service /etc/systemd/system/gezykomen.service
-# 1) sesuaikan path bun di ExecStart dengan hasil `which bun`
-# 2) isi GEZYKOMEN_SALT dengan: openssl rand -hex 16
+# sesuaikan path bun di ExecStart dengan hasil `which bun`
 sudo systemctl daemon-reload
 sudo systemctl enable --now gezykomen
 sudo systemctl status gezykomen
 ```
 
+Salt TIDAK ditulis di `gezykomen.service` — service membacanya dari
+`/etc/gezykomen.env` lewat `EnvironmentFile`.
+
 ---
 
-## 5. Caddy (HTTPS)
+## 5. Nginx (HTTPS)
 
-Tambahkan blok di `Caddyfile.contoh` ke Caddyfile di VPS:
-
-```caddy
-komentar.pakgun.web.id {
-    reverse_proxy 127.0.0.1:3102
-}
-```
-
-Lalu:
+Tambahkan blok di `nginx-gezykomen.conf.contoh` ke konfigurasi Nginx di
+VPS (misal `/etc/nginx/sites-available/komentar.pakgun.web.id`, lalu
+symlink ke `sites-enabled`), sesuaikan dengan pola domain lain di VPS
+yang sama:
 
 ```bash
-sudo systemctl reload caddy
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
-Caddy otomatis mengurus sertifikat HTTPS untuk subdomain itu.
+Nginx meneruskan header `CF-Connecting-IP` dari Cloudflare apa adanya
+— jangan dihapus/ditimpa, karena server memakai header itu untuk
+menentukan IP pengunjung (rate limit login & kirim komentar).
 
 Blog memakai HTTPS, jadi layanan ini **wajib HTTPS juga** — kalau masih
 HTTP, browser memblokir panggilan dari halaman HTTPS dan komentar tidak
@@ -146,7 +163,7 @@ admin — sembunyikan, tampilkan lagi, lalu hapus untuk membersihkan.
 Komentar tersimpan di satu berkas SQLite:
 
 ```bash
-cp /opt/gezykomen/data/gezykomen.db /tempat-backup/gezykomen-$(date +%F).db
+cp /opt/waline/data/gezykomen.db /tempat-backup/gezykomen-$(date +%F).db
 ```
 
 Simpan di lokasi permanen, bukan di `/tmp` (isi `/tmp` bisa hilang

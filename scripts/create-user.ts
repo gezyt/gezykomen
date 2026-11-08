@@ -1,7 +1,7 @@
 /**
  * Buat akun admin GezyKomen (tanpa registrasi publik).
  * Pemakaian di VPS:
- *   cd /opt/gezykomen
+ *   cd /opt/waline
  *   bun scripts/create-user.ts <username> <password>
  * DB_PATH diambil dari env (default ./data/gezykomen.db).
  * Jalankan sekali untuk akun pertama (misal: pakgun).

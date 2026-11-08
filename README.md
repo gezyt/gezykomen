@@ -40,22 +40,23 @@ komentar.
 | `server.ts` | Seluruh layanan (API + widget + halaman admin) |
 | `public/widget.js`, `public/widget.css` | Widget yang dipasang di blog |
 | `scripts/create-user.ts` | Buat akun admin: `bun scripts/create-user.ts <username> <password>` |
-| `tests/gezykomen.test.ts` | Uji otomatis (`bun test` — 14 uji) |
-| `gezykomen.service` | Unit systemd untuk VPS |
-| `Caddyfile.contoh` | Potongan Caddy untuk `komentar.pakgun.web.id` |
-| `.env.example` | Contoh env (salin jadi `.env` bila perlu) |
+| `tests/gezykomen.test.ts` | Uji otomatis (`bun test` — 15 uji) |
+| `gezykomen.service` | Unit systemd untuk VPS (salt dari `/etc/gezykomen.env`) |
+| `nginx-gezykomen.conf.contoh` | Potongan Nginx untuk `komentar.pakgun.web.id` |
+| `.env.example` | Contoh isi `/etc/gezykomen.env` |
 | `DEPLOY.md` | Panduan deploy VPS langkah demi langkah |
 | `PANDUAN.md` | Panduan lengkap + integrasi blog |
 
 ## Uji
 
 ```bash
-bun test   # 14 pass, 0 fail
+bun test   # 15 pass, 0 fail
 ```
 
 ## Deploy
 
 Baca `DEPLOY.md` dari atas sampai bawah. Urutannya: DNS
-`komentar.pakgun.web.id` → `129.226.95.14`, clone ke `/opt/gezykomen`,
-buat akun admin, systemd enable, Caddy reload, curl uji, lalu pasang
-widget di blog (matikan Waline/Utterances di `params.toml`).
+`komentar.pakgun.web.id` → `129.226.95.14`, clone ke `/opt/waline`,
+buat akun admin, systemd enable, Nginx reload, curl uji, lalu pasang
+widget di blog (override `layouts/_partials/comment.html` di repo
+blog, menggantikan Waline/Utterances).

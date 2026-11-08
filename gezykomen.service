@@ -4,16 +4,19 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/gezykomen
+WorkingDirectory=/opt/waline
 # Sesuaikan path bun dengan hasil `which bun` di VPS.
 ExecStart=/usr/local/bin/bun server.ts
 Restart=on-failure
 RestartSec=5
 Environment=PORT=3102
-Environment=DB_PATH=/opt/gezykomen/data/gezykomen.db
+Environment=DB_PATH=/opt/waline/data/gezykomen.db
 Environment=GEZYKOMEN_ORIGINS=https://site.pakgun.web.id,https://pakgun.gezytech.web.id
-# Buat salt acak: openssl rand -hex 16
-Environment=GEZYKOMEN_SALT=ganti-dengan-salt-acak
+# Salt + rahasia lain tinggal di /etc/gezykomen.env (bukan di berkas ini).
+# Isi berkas itu sekali saja, misal:
+#   GEZYKOMEN_SALT=<hasil openssl rand -hex 16>
+# Lalu: sudo chmod 600 /etc/gezykomen.env
+EnvironmentFile=/etc/gezykomen.env
 
 [Install]
 WantedBy=multi-user.target
