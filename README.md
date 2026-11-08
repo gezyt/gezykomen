@@ -19,6 +19,10 @@ komentar.
   (nama 2–50 karakter, isi 1–1000 karakter). Rate limit: maks 5 komentar
   per IP per 10 menit, jeda minimal 10 detik antar kirim. IP tidak
   disimpan mentah, hanya hash.
+- Balasan (reply): tiap komentar utama punya tombol Balas; balasan
+  tampil menjorok di bawah induknya, satu tingkat saja (balasan untuk
+  balasan ditolak). Balasan ikut tersembunyi bila induk disembunyikan;
+  hapus induk ikut menghapus balasannya.
 - Admin: login satu akun (tanpa registrasi publik, akun dibuat lewat
   `bun scripts/create-user.ts`), halaman `/admin` untuk melihat semua
   komentar termasuk yang disembunyikan, tombol Sembunyikan / Tampilkan /

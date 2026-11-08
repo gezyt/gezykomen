@@ -224,6 +224,92 @@ describe("rate limit", () => {
   });
 });
 
+describe("balasan (reply)", () => {
+  test("balasan ke komentar utama berhasil dan tampil di bawah induk", async () => {
+    const h = buat();
+    const induk = await kirim(h, { path: "/b/", nick: "Ani", isi: "Utama" });
+    expect(induk.status).toBe(201);
+    h.resetRateLimits();
+    const balas = await kirim(h, { path: "/b/", nick: "Budi", isi: "Setuju!", parent_id: 1 });
+    expect(balas.status).toBe(201);
+    const j: any = await (await balas.json()) as any;
+    expect(j.comment.parent_id).toBe(1);
+    const daftar: any = await (
+      await h.fetch(new Request("http://localhost/api/comments?path=/b/"))
+    ).json();
+    expect(daftar.count).toBe(2);
+    expect(daftar.comments[0].parent_id).toBeNull();
+    expect(daftar.comments[1].parent_id).toBe(1);
+    expect(daftar.comments[1].nick).toBe("Budi");
+  });
+  test("balasan untuk balasan, induk tak ada, dan beda path ditolak 400", async () => {
+    const h = buat();
+    await kirim(h, { path: "/b/", nick: "Ani", isi: "Utama" });
+    h.resetRateLimits();
+    await kirim(h, { path: "/b/", nick: "Budi", isi: "Balasan", parent_id: 1 });
+    expect((await kirim(h, { path: "/b/", nick: "Cici", isi: "Balas balasan", parent_id: 2 })).status).toBe(400);
+    expect((await kirim(h, { path: "/b/", nick: "Cici", isi: "Tak ada", parent_id: 99 })).status).toBe(400);
+    expect((await kirim(h, { path: "/lain/", nick: "Cici", isi: "Beda path", parent_id: 1 })).status).toBe(400);
+    expect((await kirim(h, { path: "/b/", nick: "Cici", isi: "Bukan angka", parent_id: "satu" })).status).toBe(400);
+  });
+  test("induk disembunyikan ikut sembunyikan balasan; ditampilkan lagi balasan kembali", async () => {
+    const h = buat();
+    await kirim(h, { path: "/b/", nick: "Ani", isi: "Utama" });
+    h.resetRateLimits();
+    await kirim(h, { path: "/b/", nick: "Budi", isi: "Balasan", parent_id: 1 });
+    const { cookie } = await login(h);
+    await h.fetch(new Request("http://localhost/api/admin/comments/1/hide", { method: "POST", headers: { Cookie: cookie } }));
+    const sembunyi: any = await (
+      await h.fetch(new Request("http://localhost/api/comments?path=/b/"))
+    ).json();
+    expect(sembunyi.count).toBe(0);
+    await h.fetch(new Request("http://localhost/api/admin/comments/1/show", { method: "POST", headers: { Cookie: cookie } }));
+    const tampil: any = await (
+      await h.fetch(new Request("http://localhost/api/comments?path=/b/"))
+    ).json();
+    expect(tampil.count).toBe(2);
+  });
+  test("hapus induk ikut menghapus balasannya", async () => {
+    const h = buat();
+    await kirim(h, { path: "/b/", nick: "Ani", isi: "Utama" });
+    h.resetRateLimits();
+    await kirim(h, { path: "/b/", nick: "Budi", isi: "Balasan", parent_id: 1 });
+    const { cookie } = await login(h);
+    const del = await h.fetch(
+      new Request("http://localhost/api/admin/comments/1/delete", { method: "POST", headers: { Cookie: cookie } })
+    );
+    expect(del.status).toBe(200);
+    const admin: any = await (
+      await h.fetch(new Request("http://localhost/api/admin/comments", { headers: { Cookie: cookie } }))
+    ).json();
+    expect(admin.count).toBe(0);
+  });
+  test("migrasi: database lama tanpa parent_id tetap bisa dipakai dan dibalas", async () => {
+    const { Database } = await import("bun:sqlite");
+    const dir = mkdtempSync(join(tmpdir(), "gezykomen-migrasi-"));
+    const dbPath = join(dir, "lama.db");
+    const lama = new Database(dbPath);
+    lama.exec(`
+      CREATE TABLE comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT NOT NULL,
+        nick TEXT NOT NULL, isi TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'tampil',
+        ip_hash TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO comments (path, nick, isi) VALUES ('/lama/', 'Ani', 'Komentar lama');
+    `);
+    lama.close();
+    const h = createHandler({ dbPath, origins: ["https://site.pakgun.web.id"], salt: "uji", secureCookie: false });
+    const balas = await kirim(h, { path: "/lama/", nick: "Budi", isi: "Balasan untuk yang lama", parent_id: 1 });
+    expect(balas.status).toBe(201);
+    const daftar: any = await (
+      await h.fetch(new Request("http://localhost/api/comments?path=/lama/"))
+    ).json();
+    expect(daftar.count).toBe(2);
+  });
+});
+
 describe("health", () => {
   test("/health menjawab ok", async () => {
     const h = buat();

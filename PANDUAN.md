@@ -33,7 +33,9 @@ Keamanan dasar: isi komentar dirender dengan `textContent` (bukan
 `innerHTML`), jadi HTML/` <script>` dari pengunjung tidak pernah jalan.
 Rate limit: maks 5 komentar per IP per 10 menit, jeda minimal 10 detik.
 IP tidak disimpan mentah, hanya hash. CORS hanya mengizinkan dua origin
-blog di atas.
+blog di atas. Balasan: satu tingkat saja, ke komentar utama; balasan
+untuk balasan ditolak, balasan ikut tersembunyi bila induknya
+disembunyikan, dan hapus induk ikut menghapus balasannya.
 
 ## Deploy
 
