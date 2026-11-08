@@ -1,0 +1,30 @@
+services:
+  waline:
+    container_name: waline
+    image: lizheming/waline:latest
+    restart: always
+    # network_mode host: supaya MYSQL_HOST=127.0.0.1 di dalam container
+    # benar-benar menunjuk ke MariaDB di VPS ini. MariaDB hanya
+    # mendengarkan di 127.0.0.1:3306, jadi tanpa ini koneksi gagal.
+    # Konsekuensinya port 8360 langsung terbuka di host (127.0.0.1:8360),
+    # dan Caddy yang meneruskannya ke internet lewat HTTPS.
+    network_mode: host
+    volumes:
+      - /opt/waline/data:/app/data
+    env_file:
+      - .env
+    environment:
+      TZ: 'Asia/Jakarta'
+      MYSQL_DB: ${MYSQL_DB:-waline}
+      MYSQL_USER: ${MYSQL_USER:-waline}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?isi MYSQL_PASSWORD di .env}
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_PREFIX: 'wl_'
+      MYSQL_CHARSET: 'utf8mb4'
+      MYSQL_SSL: 'false'
+      JWT_TOKEN: ${JWT_TOKEN:?isi JWT_TOKEN di .env}
+      SITE_NAME: ${SITE_NAME:-Blog Pak Gun}
+      SITE_URL: ${SITE_URL:-https://site.pakgun.web.id}
+      SECURE_DOMAINS: ${SECURE_DOMAINS:-site.pakgun.web.id}
+      AUTHOR_EMAIL: ${AUTHOR_EMAIL:?isi AUTHOR_EMAIL di .env}

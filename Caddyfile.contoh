@@ -1,0 +1,9 @@
+# Tambahkan blok ini ke Caddyfile di VPS, lalu:
+#   sudo systemctl reload caddy
+#
+# Caddy otomatis mengurus sertifikat HTTPS (Let's Encrypt) untuk
+# komentar.pakgun.web.id, seperti domain lain di VPS ini.
+
+komentar.pakgun.web.id {
+    reverse_proxy 127.0.0.1:8360
+}
