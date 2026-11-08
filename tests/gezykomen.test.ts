@@ -195,6 +195,26 @@ describe("admin", () => {
 });
 
 describe("rate limit", () => {
+  test("login salah 10x lalu 429, dan X-Forwarded-For palsu tidak bisa lewati batas itu", async () => {
+    const h = buat();
+    async function cobaLoginSalah(headers: Record<string, string>) {
+      return h.fetch(
+        new Request("http://localhost/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...headers },
+          body: JSON.stringify({ username: "pakgun", password: "salah" }),
+        })
+      );
+    }
+    for (let i = 0; i < 10; i++) {
+      expect((await cobaLoginSalah({ "X-Forwarded-For": "1.2.3.4" })).status).toBe(401);
+    }
+    expect((await cobaLoginSalah({ "X-Forwarded-For": "1.2.3.4" })).status).toBe(429);
+    // ganti X-Forwarded-For seenaknya: tetap 429, karena header itu diabaikan
+    expect((await cobaLoginSalah({ "X-Forwarded-For": "9.9.9.9" })).status).toBe(429);
+    // CF-Connecting-IP dipakai sebagai identitas: IP Cloudflare lain dapat kuota baru
+    expect((await cobaLoginSalah({ "CF-Connecting-IP": "2.2.2.2" })).status).toBe(401);
+  });
   test("kirim kedua dalam 10 detik ditolak 429, setelah reset bisa lagi", async () => {
     const h = buat();
     expect((await kirim(h, { path: "/r/", nick: "Ani", isi: "satu" })).status).toBe(201);

@@ -6,6 +6,9 @@
  *
  * Blog: https://site.pakgun.web.id dan https://pakgun.gezytech.web.id
  * Layanan: https://komentar.pakgun.web.id (CORS hanya dua origin itu)
+ * IP pengunjung dibaca dari CF-Connecting-IP (Cloudflare menimpanya,
+ * tidak bisa dipalsukan lewat Cloudflare); X-Forwarded-For sengaja
+ * TIDAK dipercaya karena bisa dikirim siapa saja.
  *
  * Publik (tanpa login):
  *   GET  /health
@@ -135,8 +138,21 @@ export function createHandler(opts: HandlerOptions) {
   }
 
   function ipDari(req: Request): string {
-    const xff = req.headers.get("x-forwarded-for");
-    if (xff) return xff.split(",")[0].trim();
+    // IP pengunjung dipakai untuk rate limit (login & kirim komentar).
+    //
+    // Perbaikan 9 Nov 2026 — JANGAN percaya X-Forwarded-For: header itu
+    // bisa dikirim siapa saja, jadi penyerang bisa memalsukannya untuk
+    // mendapat kuota percobaan login baru (terbukti di uji lokal).
+    //
+    // Yang dipercaya hanya CF-Connecting-IP: Cloudflare MENIMPA header
+    // ini dengan IP asli pengunjung, jadi nilainya tidak bisa dipalsukan
+    // selama lalu lintas lewat Cloudflare (domain ini memang di-proxy
+    // Cloudflare). Tanpa header itu (akses langsung ke server, tanpa
+    // Cloudflare), pakai IP koneksi TCP — di VPS itu IP Caddy
+    // (127.0.0.1), jadi semua lalu lintas langsung berbagi satu kuota:
+    // sengaja ketat (fail-closed), bukan longgar.
+    const cf = req.headers.get("cf-connecting-ip");
+    if (cf) return cf.trim();
     return (Bun as any).requestIP?.(req)?.address || "unknown";
   }
 
