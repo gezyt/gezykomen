@@ -1,0 +1,19 @@
+[Unit]
+Description=GezyKomen - sistem komentar blog Pak Gun
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/gezykomen
+# Sesuaikan path bun dengan hasil `which bun` di VPS.
+ExecStart=/usr/local/bin/bun server.ts
+Restart=on-failure
+RestartSec=5
+Environment=PORT=3102
+Environment=DB_PATH=/opt/gezykomen/data/gezykomen.db
+Environment=GEZYKOMEN_ORIGINS=https://site.pakgun.web.id,https://pakgun.gezytech.web.id
+# Buat salt acak: openssl rand -hex 16
+Environment=GEZYKOMEN_SALT=ganti-dengan-salt-acak
+
+[Install]
+WantedBy=multi-user.target

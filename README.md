@@ -1,45 +1,61 @@
-# Waline untuk Blog Pak Gun — deploy di VPS
+# GezyKomen — sistem komentar simpel untuk blog Pak Gun
 
-Repo ini **bukan** kode sumber Waline. Ini repo deploy milik Pak Gun untuk
-menjalankan server komentar Waline di VPS sendiri.
+Menggantikan Waline. Dibuat sendiri, simpel saja: pengunjung berkomentar
+tanpa login, Pak Gun sebagai admin bisa menyembunyikan dan menghapus
+komentar.
 
-- **Kode Waline resmi:** https://github.com/walinejs/waline
-- **Gambar Docker resmi:** `lizheming/waline:latest`
-- **Dokumentasi resmi:** https://waline.js.org
+- **Blog:** https://site.pakgun.web.id (dan https://pakgun.gezytech.web.id)
+- **Layanan komentar:** https://komentar.pakgun.web.id
+- **VPS:** `129.226.95.14`
+- **Stack:** Bun + Bun.serve + bun:sqlite (WAL), **tanpa dependensi luar**,
+  satu proses, satu berkas `server.ts` — pola yang sama seperti GezyView.
+- **Database:** SQLite satu berkas `data/gezykomen.db` (cukup disalin
+  untuk backup). Tidak pakai MariaDB, tidak pakai Docker.
+- **Port:** 3102 (3100 GezyBoard, 3101 GezyView/PapanTulis — jangan dipakai)
 
-## Yang dipakai di sini
+## Fitur MVP
 
-- Blog: https://site.pakgun.web.id (Hugo, di VPS yang sama)
-- Server komentar: https://komentar.pakgun.web.id
-- VPS: `129.226.95.14`
-- Database: MariaDB 11.8.6 yang sudah ada di VPS itu (dipakai juga oleh
-  GezyCBT) — Waline memakai database + user sendiri, `waline` / `waline`.
-- Syarat yang ditetapkan Pak Gun: pengunjung berkomentar **tanpa login**,
-  cukup isi nama; Pak Gun sebagai admin bisa menghapus komentar.
+- Publik tanpa login: lihat daftar komentar per artikel, kirim komentar
+  (nama 2–50 karakter, isi 1–1000 karakter). Rate limit: maks 5 komentar
+  per IP per 10 menit, jeda minimal 10 detik antar kirim. IP tidak
+  disimpan mentah, hanya hash.
+- Admin: login satu akun (tanpa registrasi publik, akun dibuat lewat
+  `bun scripts/create-user.ts`), halaman `/admin` untuk melihat semua
+  komentar termasuk yang disembunyikan, tombol Sembunyikan / Tampilkan /
+  Hapus (hapus permanen).
+- Widget blog: `public/widget.js` + `public/widget.css`. Blog cukup
+  pasang:
+  ```html
+  <div id="gezykomen" data-path="/slug-artikel/"></div>
+  <link rel="stylesheet" href="https://komentar.pakgun.web.id/widget.css">
+  <script src="https://komentar.pakgun.web.id/widget.js"></script>
+  ```
+  Isi komentar dirender dengan `textContent`, bukan `innerHTML`, supaya
+  HTML/` <script>` dari pengunjung tidak pernah jalan.
 
 ## Isi repo
 
 | Berkas | Guna |
 |---|---|
-| `PANDUAN.md` | Panduan lengkap, langkah demi langkah, bahasa pemula |
-| `docker-compose.yml` | Menjalankan Waline (Docker) |
-| `.env.example` | Contoh isi `.env` — salin jadi `.env`, lalu isi kata sandi asli |
+| `server.ts` | Seluruh layanan (API + widget + halaman admin) |
+| `public/widget.js`, `public/widget.css` | Widget yang dipasang di blog |
+| `scripts/create-user.ts` | Buat akun admin: `bun scripts/create-user.ts <username> <password>` |
+| `tests/gezykomen.test.ts` | Uji otomatis (`bun test` — 14 uji) |
+| `gezykomen.service` | Unit systemd untuk VPS |
 | `Caddyfile.contoh` | Potongan Caddy untuk `komentar.pakgun.web.id` |
-| `waline.sql` | Struktur tabel Waline untuk MySQL/MariaDB (disalin dari repo resmi Waline, 8 Nov 2026) |
+| `.env.example` | Contoh env (salin jadi `.env` bila perlu) |
+| `DEPLOY.md` | Panduan deploy VPS langkah demi langkah |
+| `PANDUAN.md` | Panduan lengkap + integrasi blog |
 
-## Cara singkat
+## Uji
 
-Baca `PANDUAN.md` dari atas sampai bawah. Urutannya:
+```bash
+bun test   # 14 pass, 0 fail
+```
 
-1. Buat DNS `komentar.pakgun.web.id` → `129.226.95.14`.
-2. Buat database + user `waline` di MariaDB, lalu impor `waline.sql`.
-3. Salin `.env.example` jadi `.env`, isi kata sandi dan `JWT_TOKEN`.
-4. `docker compose up -d`, cek `curl http://127.0.0.1:8360`.
-5. Tambahkan blok di `Caddyfile.contoh` ke Caddy VPS, lalu reload Caddy.
-6. Daftar admin pertama di `https://komentar.pakgun.web.id/ui/register`
-   — pendaftar pertama otomatis jadi administrator, jadi harus Pak Gun
-   sendiri yang daftar pertama.
-7. Isi `serverURL` Waline di config blog, matikan Utterances, rebuild blog.
+## Deploy
 
-Jangan pakai alamat IP langsung (`http://129.226.95.14:8360`) sebagai
-`serverURL` — blog HTTPS akan memblokirnya (mixed content).
+Baca `DEPLOY.md` dari atas sampai bawah. Urutannya: DNS
+`komentar.pakgun.web.id` → `129.226.95.14`, clone ke `/opt/gezykomen`,
+buat akun admin, systemd enable, Caddy reload, curl uji, lalu pasang
+widget di blog (matikan Waline/Utterances di `params.toml`).

@@ -5,5 +5,5 @@
 # komentar.pakgun.web.id, seperti domain lain di VPS ini.
 
 komentar.pakgun.web.id {
-    reverse_proxy 127.0.0.1:8360
+    reverse_proxy 127.0.0.1:3102
 }

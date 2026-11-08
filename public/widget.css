@@ -1,0 +1,11 @@
+/* GezyKomen — gaya widget, krem/cokelat seperti blog Pak Gun */
+#gezykomen { background: #faf4e3; color: #392312; border: 1px solid #e3d5b3; border-radius: 10px; padding: 16px; margin-top: 32px; font-family: system-ui, sans-serif; }
+#gezykomen .gk-judul { margin: 0 0 12px; font-size: 1.15em; }
+#gezykomen .gk-komentar { background: #fff; border: 1px solid #e3d5b3; border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
+#gezykomen .gk-komentar p { margin: 6px 0 0; white-space: pre-wrap; word-wrap: break-word; }
+#gezykomen .gk-kepala small { color: #7a6a55; font-weight: normal; }
+#gezykomen .gk-kosong { color: #7a6a55; }
+#gezykomen .gk-form { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+#gezykomen input, #gezykomen textarea { padding: 9px 10px; font-size: 15px; font-family: inherit; border: 1px solid #d8cbb0; border-radius: 6px; background: #fff; color: #392312; }
+#gezykomen button { align-self: flex-start; background: #f16b1c; color: #fff; border: 0; border-radius: 6px; padding: 9px 16px; font-size: 15px; cursor: pointer; }
+#gezykomen .gk-pesan { color: #7a6a55; margin: 0; }
