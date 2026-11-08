@@ -199,6 +199,15 @@ export function createHandler(opts: HandlerOptions) {
 
     if (url.pathname === "/health") return json({ ok: true }, 200, cors);
 
+    // ---- landing page (dibuat Pak Gun di VPS, 9 Nov 2026; disimpan di
+    // repo supaya tidak hilang saat deploy ulang dari repo) ----
+    if (url.pathname === "/" && req.method === "GET") {
+      return new Response(
+        `<!doctype html>\n<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n<title>Komentar Pak Gun</title></head>\n<body style="font-family:system-ui,sans-serif;max-width:680px;margin:4rem auto;padding:0 1rem;color:#392312">\n<h1>Komentar Pak Gun</h1><p>Layanan komentar aktif.</p>\n<p><a href="/admin">Masuk ke halaman admin</a></p>\n</body></html>`,
+        { headers: { "Content-Type": "text/html; charset=utf-8", ...cors } }
+      );
+    }
+
     // ---- berkas widget ----
     if (url.pathname === "/widget.js" && req.method === "GET") {
       const file = Bun.file(join(publicDir, "widget.js"));
