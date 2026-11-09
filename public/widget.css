@@ -1,16 +1,34 @@
-/* GezyKomen — gaya widget, krem/cokelat seperti blog Pak Gun */
-#gezykomen { background: #faf4e3; color: #392312; border: 1px solid #e3d5b3; border-radius: 10px; padding: 16px; margin-top: 32px; font-family: system-ui, sans-serif; }
+/* GezyKomen — gaya widget, mengikuti tema blog Pak Gun (DoIt).
+ * Terang (default): latar putih #fff, teks #161209, aksen teal #2d809a.
+ * Gelap: mengikuti html.dark dari tema (latar #0d1117, teks #e6edf3).
+ * Halaman /admin dan landing page tetap memakai palet krem sendiri,
+ * karena keduanya halaman tersendiri, bukan di dalam blog. */
+#gezykomen { background: #fff; color: #161209; border: 1px solid #f0f0f0; border-radius: 10px; padding: 16px; margin-top: 32px; font-family: system-ui, sans-serif; }
 #gezykomen .gk-judul { margin: 0 0 12px; font-size: 1.15em; }
-#gezykomen .gk-komentar { background: #fff; border: 1px solid #e3d5b3; border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
+#gezykomen .gk-komentar { background: #f8f8f8; border: 1px solid #f0f0f0; border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
 #gezykomen .gk-komentar p { margin: 6px 0 0; white-space: pre-wrap; word-wrap: break-word; }
-#gezykomen .gk-kepala small { color: #7a6a55; font-weight: normal; }
-#gezykomen .gk-kosong { color: #7a6a55; }
+#gezykomen .gk-kepala small { color: #4d4d4d; font-weight: normal; }
+#gezykomen .gk-kosong { color: #4d4d4d; }
 #gezykomen .gk-form { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
-#gezykomen input, #gezykomen textarea { padding: 9px 10px; font-size: 15px; font-family: inherit; border: 1px solid #d8cbb0; border-radius: 6px; background: #fff; color: #392312; }
-#gezykomen button { align-self: flex-start; background: #f16b1c; color: #fff; border: 0; border-radius: 6px; padding: 9px 16px; font-size: 15px; cursor: pointer; }
-#gezykomen .gk-pesan { color: #7a6a55; margin: 0; }
-#gezykomen .gk-balasan { margin-left: 24px; border-left: 3px solid #f16b1c; }
-#gezykomen .gk-membalas { color: #7a6a55; display: block; margin-top: 2px; }
-#gezykomen .gk-balas-btn { background: transparent; color: #f16b1c; border: 1px solid #f16b1c; padding: 4px 10px; font-size: 13px; margin-top: 8px; }
+#gezykomen input, #gezykomen textarea { padding: 9px 10px; font-size: 15px; font-family: inherit; border: 1px solid #e0e0e0; border-radius: 6px; background: #fff; color: #161209; }
+#gezykomen button { align-self: flex-start; background: #2d809a; color: #fff; border: 0; border-radius: 6px; padding: 9px 16px; font-size: 15px; cursor: pointer; }
+#gezykomen .gk-pesan { color: #4d4d4d; margin: 0; }
+#gezykomen .gk-balasan { margin-left: 24px; border-left: 3px solid #2d809a; }
+#gezykomen .gk-membalas { color: #4d4d4d; display: block; margin-top: 2px; }
+#gezykomen .gk-balas-btn { background: transparent; color: #2d809a; border: 1px solid #2d809a; padding: 4px 10px; font-size: 13px; margin-top: 8px; }
 #gezykomen .gk-form-balas { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-#gezykomen .gk-form-balas button { background: #f16b1c; }
+#gezykomen .gk-form-balas button { background: #2d809a; }
+
+/* Mode gelap — tema blog memakai html.dark */
+html.dark #gezykomen { background: #0d1117; color: #e6edf3; border-color: #30363d; }
+html.dark #gezykomen .gk-komentar { background: #161b22; border-color: #30363d; }
+html.dark #gezykomen .gk-kepala small,
+html.dark #gezykomen .gk-kosong,
+html.dark #gezykomen .gk-pesan,
+html.dark #gezykomen .gk-membalas { color: #848d97; }
+html.dark #gezykomen input,
+html.dark #gezykomen textarea { background: #0d1117; border-color: #30363d; color: #e6edf3; }
+html.dark #gezykomen button,
+html.dark #gezykomen .gk-form-balas button { background: #1f6feb; }
+html.dark #gezykomen .gk-balas-btn { background: transparent; color: #4493f8; border-color: #4493f8; }
+html.dark #gezykomen .gk-balasan { border-left-color: #4493f8; }
