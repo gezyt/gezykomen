@@ -310,6 +310,67 @@ describe("balasan (reply)", () => {
   });
 });
 
+describe("balasan admin", () => {
+  test("halaman /admin memuat tombol Balas dan tautan artikel", async () => {
+    const h = buat();
+    const r = await h.fetch(new Request("http://localhost/admin"));
+    expect(r.status).toBe(200);
+    const html = await r.text();
+    expect(html).toContain("Balas");
+    expect(html).toContain("site.pakgun.web.id");
+  });
+  test("admin bisa membalas dari endpoint admin; nick = username yang login", async () => {
+    const h = buat();
+    await kirim(h, { path: "/b/", nick: "Ani", isi: "Tanya dong" });
+    const tanpaLogin = await h.fetch(
+      new Request("http://localhost/api/admin/comments/1/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isi: "Jawaban" }),
+      })
+    );
+    expect(tanpaLogin.status).toBe(401);
+    const { cookie } = await login(h);
+    const balas = await h.fetch(
+      new Request("http://localhost/api/admin/comments/1/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: cookie },
+        body: JSON.stringify({ isi: "Jawabannya begini" }),
+      })
+    );
+    expect(balas.status).toBe(201);
+    const j: any = await balas.json();
+    expect(j.comment.parent_id).toBe(1);
+    expect(j.comment.nick).toBe("pakgun");
+    const publik: any = await (
+      await h.fetch(new Request("http://localhost/api/comments?path=/b/"))
+    ).json();
+    expect(publik.count).toBe(2);
+    expect(publik.comments[1].isi).toBe("Jawabannya begini");
+  });
+  test("balasan admin ke balasan menempel ke induk utama; isi kosong dan id tak ada ditolak", async () => {
+    const h = buat();
+    await kirim(h, { path: "/b/", nick: "Ani", isi: "Utama" });
+    h.resetRateLimits();
+    await kirim(h, { path: "/b/", nick: "Budi", isi: "Balasan", parent_id: 1 });
+    const { cookie } = await login(h);
+    async function balasAdmin(id: number, isi: string) {
+      return h.fetch(
+        new Request("http://localhost/api/admin/comments/" + id + "/reply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Cookie: cookie },
+          body: JSON.stringify({ isi }),
+        })
+      );
+    }
+    const keBalasan = await balasAdmin(2, "Balasan admin untuk balasan");
+    expect(keBalasan.status).toBe(201);
+    expect(((await keBalasan.json()) as any).comment.parent_id).toBe(1);
+    expect((await balasAdmin(1, "")).status).toBe(400);
+    expect((await balasAdmin(99, "Tak ada")).status).toBe(404);
+  });
+});
+
 describe("health", () => {
   test("/health menjawab ok", async () => {
     const h = buat();

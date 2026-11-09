@@ -26,7 +26,9 @@ komentar.
 - Admin: login satu akun (tanpa registrasi publik, akun dibuat lewat
   `bun scripts/create-user.ts`), halaman `/admin` untuk melihat semua
   komentar termasuk yang disembunyikan, tombol Sembunyikan / Tampilkan /
-  Hapus (hapus permanen).
+  Hapus (hapus permanen). Path tiap komentar jadi tautan ke artikelnya
+  di `site.pakgun.web.id`, dan admin bisa membalas langsung dari
+  `/admin` (tombol Balas; balasan terkirim atas nama username admin).
 - Widget blog: `public/widget.js` + `public/widget.css`. Blog cukup
   pasang:
   ```html

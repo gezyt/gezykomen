@@ -25,6 +25,8 @@
  *   GET  /admin (halaman HTML)
  *   GET  /api/admin/comments
  *   POST /api/admin/comments/:id/hide | /show | /delete
+ *   POST /api/admin/comments/:id/reply { isi } (balasan admin, nick =
+ *     username yang login; path artikel ditautkan ke site.pakgun.web.id)
  *
  * Env:
  *   PORT                (default 3102)
@@ -397,6 +399,35 @@ export function createHandler(opts: HandlerOptions) {
       return json({ count: rows.length, comments: rows }, 200, cors);
     }
 
+    // Balasan admin dari halaman /admin: nick diambil dari akun yang
+    // login (tidak bisa dipalsukan), tanpa rate limit publik — admin
+    // sudah terotentikasi, jadi pembatas kirim publik tidak berlaku.
+    const mBalas = url.pathname.match(/^\/api\/admin\/comments\/(\d+)\/reply$/);
+    if (mBalas && req.method === "POST") {
+      const user = userDari(req);
+      if (!user) return json({ error: "belum login" }, 401, cors);
+      let body: any = {};
+      try {
+        body = await req.json();
+      } catch {
+        return json({ error: "body harus JSON" }, 400, cors);
+      }
+      const isi = validateIsi(body?.isi);
+      if (!isi) return json({ error: "balasan 1-1000 karakter" }, 400, cors);
+      const target = db
+        .query("SELECT id, path, parent_id FROM comments WHERE id = ?")
+        .get(Number(mBalas[1])) as any;
+      if (!target) return json({ error: "komentar tidak ditemukan" }, 404, cors);
+      const parentId = target.parent_id ?? target.id;
+      const r = db
+        .query("INSERT INTO comments (path, nick, isi, ip_hash, parent_id) VALUES (?, ?, ?, ?, ?)")
+        .run(target.path, user.username, isi, ipHash(ipDari(req)), parentId);
+      const row = db
+        .query("SELECT id, parent_id, nick, isi, created_at FROM comments WHERE id = ?")
+        .get(r.lastInsertRowid) as any;
+      return json({ ok: true, comment: row }, 201, cors);
+    }
+
     const mAdmin = url.pathname.match(/^\/api\/admin\/comments\/(\d+)\/(hide|show|delete)$/);
     if (mAdmin && req.method === "POST") {
       const user = userDari(req);
@@ -432,7 +463,7 @@ export function createHandler(opts: HandlerOptions) {
 const ADMIN_HTML = `<!doctype html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GezyKomen — Admin</title>
-<style>body{font-family:system-ui,sans-serif;max-width:720px;margin:24px auto;padding:0 16px;background:#FAF4E3;color:#392312}input,button{padding:8px;font-size:15px}button{background:#F16B1C;color:#fff;border:0;border-radius:6px;cursor:pointer;margin-right:6px}article{border:1px solid #d8cbb0;border-radius:8px;padding:10px;margin:10px 0;background:#fff}article.balasan{margin-left:28px;border-left:3px solid #f16b1c}small{color:#7a6a55}</style>
+<style>body{font-family:system-ui,sans-serif;max-width:720px;margin:24px auto;padding:0 16px;background:#FAF4E3;color:#392312}input,button,textarea{padding:8px;font-size:15px;font-family:inherit}button{background:#F16B1C;color:#fff;border:0;border-radius:6px;cursor:pointer;margin-right:6px}button.balas{background:transparent;color:#F16B1C;border:1px solid #F16B1C}article{border:1px solid #d8cbb0;border-radius:8px;padding:10px;margin:10px 0;background:#fff}article.balasan{margin-left:28px;border-left:3px solid #f16b1c}small{color:#7a6a55}a{color:#F16B1C}textarea{width:100%;box-sizing:border-box;border:1px solid #d8cbb0;border-radius:6px;margin-top:8px}.form-balas{margin-top:8px}.form-balas p{color:red;margin:6px 0 0}</style>
 </head><body>
 <h1>GezyKomen — Admin</h1>
 <div id="login"><h2>Masuk</h2><input id="u" placeholder="username" autocomplete="username"><br><br><input id="p" type="password" placeholder="kata sandi" autocomplete="current-password"><br><br><button id="btnLogin">Masuk</button><p id="loginErr" style="color:red"></p></div>
@@ -451,14 +482,37 @@ async function muat(){
   (d.j.comments||[]).forEach(function(k){
     const a=el('article');
     if(k.parent_id){ a.className='balasan'; }
-    a.append(el('strong', k.nick+' ')); a.append(el('small', k.path+' · '+k.created_at+' · '+k.status));
+    a.append(el('strong', k.nick+' '));
+    const info=el('small');
+    const tautan=document.createElement('a');
+    tautan.href='https://site.pakgun.web.id'+k.path; tautan.target='_blank'; tautan.rel='noopener';
+    tautan.textContent=k.path;
+    info.append(tautan);
+    info.append(document.createTextNode(' · '+k.created_at+' · '+k.status));
+    a.append(info);
     if(k.parent_id){ a.append(el('p', '↩ Balasan untuk '+(nama[k.parent_id]||'komentar yang sudah dihapus'))); }
     a.append(el('p', k.isi));
     const b1=el('button', k.status==='tampil'?'Sembunyikan':'Tampilkan');
     b1.onclick=async()=>{ await api('/api/admin/comments/'+k.id+(k.status==='tampil'?'/hide':'/show'),{method:'POST'}); muat(); };
     const b2=el('button','Hapus');
     b2.onclick=async()=>{ if(confirm('Hapus komentar ini selamanya?')){ await api('/api/admin/comments/'+k.id+'/delete',{method:'POST'}); muat(); } };
-    a.append(b1,b2); wadah.append(a);
+    const b3=el('button','Balas'); b3.className='balas';
+    var formBalas=null;
+    b3.onclick=()=>{
+      if(formBalas){ formBalas.remove(); formBalas=null; b3.textContent='Balas'; return; }
+      formBalas=el('div', null, 'form-balas');
+      const ta=document.createElement('textarea'); ta.rows=2; ta.placeholder='Tulis balasan sebagai '+me.j.user.username+'…'; ta.maxLength=1000;
+      const kirim=el('button','Kirim balasan');
+      const err=el('p');
+      kirim.onclick=async()=>{
+        const r=await api('/api/admin/comments/'+k.id+'/reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({isi:ta.value})});
+        if(r.status!==201){ err.textContent=r.j.error||'Gagal mengirim balasan'; return; }
+        muat();
+      };
+      formBalas.append(ta,kirim,err); a.append(formBalas);
+      b3.textContent='Tutup'; ta.focus();
+    };
+    a.append(b1,b2,b3); wadah.append(a);
   });
   if(!(d.j.comments||[]).length) wadah.append(el('p','Belum ada komentar.'));
 }
